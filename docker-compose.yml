@@ -1,0 +1,77 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: medigenius-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_change_me}
+      MYSQL_DATABASE: ${DB_NAME:-medigenius}
+      MYSQL_USER: ${DB_USER:-medigenius_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-medigenius_pass}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./src/main/resources/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: medigenius-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-medigenius}
+      DB_USER: ${DB_USER:-medigenius_user}
+      DB_PASSWORD: ${DB_PASSWORD:-medigenius_pass}
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      LLM_MODEL_NAME: ${LLM_MODEL_NAME:-deepseek/deepseek-r1-0528:free}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:?OPENROUTER_API_KEY is required}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required, minimum 32 bytes}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?AUTH_JWT_SECRET is required, minimum 32 bytes}
+      AUTH_JWT_EXPIRATION_MS: ${AUTH_JWT_EXPIRATION_MS:-86400000}
+      PDF_UPLOAD_DIR: /app/uploads
+      PDF_PATH: /app/data/medical_book.pdf
+      VECTOR_STORE_DIR: /app/storage/vector_store
+      LOG_DIR: /app/logs
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-*}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data:ro
+      - backend_logs:/app/logs
+      - backend_storage:/app/storage
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: medigenius-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api/v1}
+    ports:
+      - "5173:80"
+
+volumes:
+  mysql_data:
+  backend_logs:
+  backend_storage:

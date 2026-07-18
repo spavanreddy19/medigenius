@@ -1,0 +1,28 @@
+# Environment / secrets
+.env
+*.env.local
+
+# Backend build output
+target/
+*.class
+*.jar
+
+# Uploaded PDFs (Feature 6) - user content, never committed
+uploads/
+
+# Logs
+logs/
+*.log
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
