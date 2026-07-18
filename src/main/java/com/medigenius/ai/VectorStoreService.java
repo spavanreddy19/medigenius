@@ -1,5 +1,5 @@
 package com.medigenius.ai;
-
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import com.medigenius.config.MediGeniusProperties;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentSplitter;
@@ -37,6 +37,12 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
+@ConditionalOnProperty(
+        prefix = "medigenius.rag",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = true
+)
 @RequiredArgsConstructor
 public class VectorStoreService {
 
