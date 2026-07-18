@@ -48,7 +48,7 @@ public class MediGeniusApplication implements CommandLineRunner {
     @Override
     public void run(String... args) {
         log.info("Initializing MediGenius System...");
-        vectorStoreService.initializeFromPdfIfPresent();
+        //vectorStoreService.initializeFromPdfIfPresent();
         log.info("MediGenius System Ready!");
     }
 }
